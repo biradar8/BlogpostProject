@@ -9,7 +9,6 @@
 - **JWT Authentication**: Secure user login using JWT tokens.
 - **Create Blog Posts**: Authenticated users can create blog posts.
 - **List Blog Posts**: View all the blog posts created by users.
-- **CRUD Operations**: Future enhancements can include updating and deleting posts.
 - **FastAPI**: Fast and modern web framework for building APIs.
 - **Pydantic**: Data validation and settings management.
 

@@ -11,7 +11,7 @@ from blogpost.config.db import get_db
 from blogpost.posts import schemas
 from blogpost.posts.models import Post
 
-post_router = APIRouter(prefix="/blog")
+post_router = APIRouter(prefix="/blog", tags=["Blog"])
 logger = logging.getLogger(__name__)
 
 
