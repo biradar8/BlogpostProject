@@ -12,12 +12,21 @@ from blogpost.posts import post_router
 
 logger = logging.getLogger("blogpost")
 
-app = FastAPI(lifespan=lifespan)
+app = FastAPI(
+    lifespan=lifespan,
+    title="FastAPI-based API's to manage blog posts",
+    terms_of_service="https://github.com/biradar8/BlogpostProject.git",
+)
 
 logger.info("Application startup completed")
 
 app.include_router(auth_router)
 app.include_router(post_router)
+
+
+@app.get("/")
+def home():
+    return {"Hello": "World"}
 
 
 @app.exception_handler(HTTPException)
