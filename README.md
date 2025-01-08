@@ -28,21 +28,38 @@
 
    ```bash
    git clone https://github.com/biradar8/BlogpostProject.git
+   ```
+
+   ```bash
    cd BlogpostProject
    ```
 
 2. **Create and activate a virtual environment**:
 
    ```bash
-   python3 -m venv venv
+   python -m venv venv
+   ```
+   ```bash
+   venv\Scripts\activate
+   ```
 
-   venv\Scripts\activate  # On Linux source venv/bin/activate
+   In linux
+
+   ```bash
+   python3 -m venv venv
+   ```
+   ```bash
+   source venv/bin/activate
    ```
 
 3. **Install the dependencies**:
 
    ```bash
    pip install -r blogpost\requirements.txt
+   ```
+
+   ```bash
+   pip install -r blogpost/requirements.txt
    ```
 
 4. **Set up the database**:
@@ -98,7 +115,7 @@ BlogpostProject/
 
 ### 1. **User Registration**
 
-#### POST `/auth/register/`
+#### POST `/api/auth/register/`
 
 - **Description**: Registers a new user. Passwords will be hashed before storing them.
 - **Request Body**: 
@@ -125,9 +142,21 @@ BlogpostProject/
 
 ---
 
-### 2. **User Login**
+### 2. **User Confirmation**
 
-#### POST `/auth/login/`
+#### POST `/api/auth/confirm/{token}`
+
+- **Description**:Confirm the email. By clicking on the link you get in email.
+
+- **Response**:
+    ```
+    Success
+    ```
+---
+
+### 3. **User Login**
+
+#### POST `/api/auth/login/`
 
 - **Description**: Authenticates the user and returns a JWT token.
 - **Request Body**:
@@ -141,16 +170,17 @@ BlogpostProject/
 - **Response**:
     ```json
     {
+        "token_type": "Bearer",
         "access_token": "jwt_token",
-        "token_type": "Bearer"
+        "refresh_token": "jwt_token"
     }
     ```
 
 ---
 
-### 3. **Create Blog Post**
+### 4. **Create Blog Post**
 
-#### POST `/blog/`
+#### POST `/api/blog/`
 
 - **Description**: Create a new blog post (authentication required).
 - **Request Body**:
@@ -179,9 +209,9 @@ BlogpostProject/
 
 ---
 
-### 4. **List All Blog Posts**
+### 5. **List All Blog Posts**
 
-#### GET `/blog/`
+#### GET `/api/blog/`
 
 - **Description**: Get a list of all blog posts.
 - **Response**:
@@ -204,9 +234,9 @@ BlogpostProject/
 
 ---
 
-### 5. **Get a Single Blog Post**
+### 6. **Get a Single Blog Post**
 
-#### GET `/blog/{blog_id}/`
+#### GET `/api/blog/{blog_id}/`
 
 - **Description**: Get details of a single blog post by ID.
 - **Response**:
@@ -224,9 +254,9 @@ BlogpostProject/
 
 ---
 
-### 6. **Update Blog Post**
+### 7. **Update Blog Post**
 
-#### PATCH `/blog/{blog_id}/`
+#### PATCH `/api/blog/{blog_id}/`
 
 - **Description**: Update an existing blog post (authentication required, and the post must be owned by the user).
 
@@ -256,9 +286,9 @@ BlogpostProject/
     ```
 ---
 
-### 7. **Delete Blog Post**
+### 8. **Delete Blog Post**
 
-#### DELETE `/blog/{blog_id}/`
+#### DELETE `/api/blog/{blog_id}/`
 
 - **Description**: Delete a blog post (authentication required, and the post must be owned by the user).
 
@@ -270,7 +300,7 @@ BlogpostProject/
     - `204 No Content`
 ---
 
-## Authentication & JWT Token
+### Authentication & JWT Token
 
 - To authenticate, send the JWT token in the `Authorization` header as a Bearer token.
 - Example:
@@ -278,7 +308,7 @@ BlogpostProject/
     Authorization: Bearer <your_jwt_token>
     ```
 
-## JWT Token Generation
+### JWT Token Generation
 
 - **POST /auth/login/** generates a JWT token when the user successfully logs in.
 - The token should be included in the Authorization header for protected routes.

@@ -1,5 +1,9 @@
 import logging
+import smtplib
+import textwrap
 from datetime import datetime, timedelta, timezone
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 from typing import Literal
 
 from fastapi import Depends, HTTPException
@@ -12,31 +16,35 @@ from blogpost.auth.models import User
 from blogpost.config.db import get_db
 from blogpost.config.settings import config
 
-SECRET_KEY = config.SECRET_KEY
-ALGORITHM = config.ALGORITHM
-EMAIL_USER = config.EMAIL_USER
-EMAIL_PASSWORD = config.EMAIL_PASSWORD
 logger = logging.getLogger(__name__)
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login/")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/auth/login/")
 
 
 class JWTRepo:
     @staticmethod
     def create_token(
-        user_id: int, token_type: Literal["access", "confirm"], expiry_minutes: int = 30
+        user_id: int,
+        token_type: Literal["access", "confirm", "refresh"],
+        expiry_minutes: int = 30,
     ):
         try:
             expires = datetime.now(timezone.utc) + timedelta(minutes=expiry_minutes)
             payload = {"sub": str(user_id), "exp": expires, "type": token_type}
-            return jwt.encode(payload, key=SECRET_KEY, algorithm=ALGORITHM)
+            return jwt.encode(
+                payload, key=config.SECRET_KEY, algorithm=config.ALGORITHM
+            )
         except JWTError as exc:
             logger.error(f"{token_type} JWT token could not be created : {str(exc)}")
             raise exc
 
     @staticmethod
-    def decode_token(token: str, token_type: Literal["access", "confirm"]) -> int:
+    def decode_token(
+        token: str, token_type: Literal["access", "confirm", "refresh"]
+    ) -> int:
         try:
-            payload = jwt.decode(token, key=SECRET_KEY, algorithms=ALGORITHM)
+            payload = jwt.decode(
+                token, key=config.SECRET_KEY, algorithms=config.ALGORITHM
+            )
             if payload is None:
                 raise HTTPException(401, "Invalid token")
             exp = payload.get("exp", None)
@@ -62,7 +70,31 @@ async def current_user(
     return auth_user
 
 
-async def send_user_confirm_email(user_id: int, email: str):
-    token = JWTRepo.create_token(user_id, "confirm", 1440)
-    url_endpoint = f"/auth/confirm/{token}"
-    logger.info(token)
+def send_user_confirm_email(user: User):
+    token = JWTRepo.create_token(user.id, "confirm", 1440)
+    url_endpoint = f"/api/auth/confirm/{token}"
+
+    sender_email = f"{config.WEBSITE_NAME}<{config.EMAIL_USER}>"
+    subject = "Activate Your Account"
+    body = textwrap.dedent(
+        f"""<p>Hello {user.full_name},</p><p>Thank you for signing up.</p>\
+        <p>To activate your account on the {config.WEBSITE_NAME}, \
+        please confirm your email by clicking the link below:</p>\
+        <p><a href="{config.WEBSITE_DOMAIN}{url_endpoint}">Confirm Your Email</a></p>\
+        <br><p>Best Regards,</p><p>{config.WEBSITE_NAME}</p>"""
+    )
+
+    message = MIMEMultipart()
+    message["From"] = sender_email
+    message["To"] = user.email
+    message["Subject"] = subject
+    message.attach(MIMEText(body, "html"))
+
+    try:
+        with smtplib.SMTP(config.EMAIL_SERVER, int(config.EMAIL_PORT)) as server:
+            server.starttls()
+            server.login(config.EMAIL_USER, config.EMAIL_PASSWORD)
+            server.sendmail(sender_email, user.email, message.as_string())
+            logger.info(f"Confirmation email sent to {user.email}")
+    except Exception as exc:
+        logger.error(f"Error sending email to {user.email}: {exc}")

@@ -19,6 +19,10 @@ class GlobalConfig(BaseConfig):
     ALGORITHM: Optional[str] = None
     EMAIL_USER: Optional[str] = None
     EMAIL_PASSWORD: Optional[str] = None
+    EMAIL_SERVER: Optional[str] = None
+    EMAIL_PORT: Optional[str] = None
+    WEBSITE_DOMAIN: Optional[str] = None
+    WEBSITE_NAME: Optional[str] = None
 
 
 class DevConfig(GlobalConfig):
