@@ -23,4 +23,5 @@ class UserResponse(BaseModel):
 class LoginResponse(BaseModel):
     token_type: str
     access_token: str
+    refresh_token: str
     model_config = ConfigDict(from_attributes=True)

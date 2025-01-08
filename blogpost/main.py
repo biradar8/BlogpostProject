@@ -20,8 +20,8 @@ app = FastAPI(
 
 logger.info("Application startup completed")
 
-app.include_router(auth_router)
-app.include_router(post_router)
+app.include_router(auth_router, prefix="/api")
+app.include_router(post_router, prefix="/api")
 
 
 @app.get("/")

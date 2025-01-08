@@ -28,7 +28,7 @@ async def register_user(
         await db.commit()
         await db.refresh(user_obj)
         logger.debug("New user registration completed")
-        bg_task.add_task(send_user_confirm_email, user_obj.id, user_obj.email)
+        bg_task.add_task(send_user_confirm_email, user_obj)
         return user_obj
     except Exception as exc:
         await db.rollback()
@@ -49,19 +49,24 @@ async def login_user(
         if not user.is_active:
             raise HTTPException(403, "Inactive user")
         if not user.is_confirmed:
-            raise HTTPException(403, "Check your email and confirm user")
+            raise HTTPException(403, "Activate account by confirming email")
         user.last_login = func.now()
         await db.commit()
         await db.refresh(user)
         access_token = JWTRepo.create_token(user.id, "access")
+        refresh_token = JWTRepo.create_token(user.id, "refresh", 1440)
         logger.debug("User login completed")
-        return {"token_type": "Bearer", "access_token": access_token}
+        return {
+            "token_type": "Bearer",
+            "access_token": access_token,
+            "refresh_token": refresh_token,
+        }
     except Exception as exc:
         await db.rollback()
         raise HTTPException(400, "An error occurred during login") from exc
 
 
-@auth_router.post("/confirm/{token}", status_code=200)
+@auth_router.get("/confirm/{token}", status_code=200)
 async def confirm_user(token: str = Path(...), db: AsyncSession = Depends(get_db)):
     try:
         user_id = JWTRepo.decode_token(token, "confirm")
