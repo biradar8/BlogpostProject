@@ -6,9 +6,10 @@ from fastapi.exception_handlers import http_exception_handler
 
 sys.dont_write_bytecode = True
 
-from blogpost.auth import auth_router
-from blogpost.config import lifespan
-from blogpost.posts import post_router
+from .auth import auth_router
+from .config import lifespan
+from .diary import draft_router
+from .posts import post_router
 
 logger = logging.getLogger("blogpost")
 
@@ -22,6 +23,7 @@ logger.info("Application startup completed")
 
 app.include_router(auth_router, prefix="/api")
 app.include_router(post_router, prefix="/api")
+app.include_router(draft_router, prefix="/api")
 
 
 @app.get("/")

@@ -5,11 +5,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from sqlalchemy.sql import select
 
-from blogpost.auth.models import User
-from blogpost.auth.utils import current_user
-from blogpost.config.db import get_db
-from blogpost.posts import schemas
-from blogpost.posts.models import Post
+from ..auth import User, current_user
+from ..config import get_db
+from . import schemas
+from .models import Post
 
 post_router = APIRouter(prefix="/blog", tags=["Blog"])
 logger = logging.getLogger(__name__)
