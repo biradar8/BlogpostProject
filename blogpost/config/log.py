@@ -1,6 +1,6 @@
 from logging.config import dictConfig
 
-from blogpost.config.settings import DevConfig, config
+from .settings import global_config
 
 
 def configure_logging():
@@ -41,22 +41,17 @@ def configure_logging():
                 },
                 "blogpost.auth.router": {
                     "handlers": ["console", "file_handler"],
-                    "level": "DEBUG" if isinstance(config, DevConfig) else "INFO",
+                    "level": ("DEBUG" if global_config.ENV_STATE == "dev" else "INFO"),
                     "propagate": False,
                 },
                 "blogpost.auth.utils": {
                     "handlers": ["console", "file_handler"],
-                    "level": "DEBUG" if isinstance(config, DevConfig) else "INFO",
-                    "propagate": False,
-                },
-                "blogpost.config.settings": {
-                    "handlers": ["console", "file_handler"],
-                    "level": "DEBUG" if isinstance(config, DevConfig) else "INFO",
+                    "level": ("DEBUG" if global_config.ENV_STATE == "dev" else "INFO"),
                     "propagate": False,
                 },
                 "blogpost.posts.router": {
                     "handlers": ["console", "file_handler"],
-                    "level": "DEBUG" if isinstance(config, DevConfig) else "INFO",
+                    "level": ("DEBUG" if global_config.ENV_STATE == "dev" else "INFO"),
                     "propagate": False,
                 },
             },

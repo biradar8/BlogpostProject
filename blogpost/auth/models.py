@@ -2,7 +2,7 @@ import bcrypt
 from sqlalchemy import Boolean, Column, DateTime, Integer, String, func
 from sqlalchemy.orm import relationship
 
-from blogpost.config.db import Base
+from ..config import Base
 
 
 class User(Base):
@@ -18,6 +18,7 @@ class User(Base):
     last_login = Column(DateTime, nullable=True)
     created_at = Column(DateTime, server_default=func.now())
     posts = relationship("Post", back_populates="author")
+    drafts = relationship("Draft", back_populates="author")
 
     def hash(self, raw_password: str):
         self.password = bcrypt.hashpw(raw_password.encode(), salt=bcrypt.gensalt())

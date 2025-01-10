@@ -1,17 +1,25 @@
 import logging
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Path
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    Body,
+    Depends,
+    HTTPException,
+    Path,
+    Query,
+)
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy import func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql import select
 
-from blogpost.auth import schemas
-from blogpost.auth.models import User
-from blogpost.auth.utils import JWTRepo, send_user_confirm_email
-from blogpost.config.db import get_db
+from ..config import get_db
+from . import schemas
+from .models import User
+from .utils import JWTRepo, send_forgot_password_email, send_user_confirm_email
 
-auth_router = APIRouter(prefix="/auth", tags=["Authorization"])
+auth_router = APIRouter(prefix="/user", tags=["Authorization"])
 logger = logging.getLogger(__name__)
 
 
@@ -23,7 +31,6 @@ async def register_user(
     try:
         user_obj = User(**user.model_dump())
         user_obj.hash(user.password)
-        user_obj.last_login = func.now()
         db.add(user_obj)
         await db.commit()
         await db.refresh(user_obj)
@@ -66,8 +73,10 @@ async def login_user(
         raise HTTPException(400, "An error occurred during login") from exc
 
 
-@auth_router.get("/confirm/{token}", status_code=200)
-async def confirm_user(token: str = Path(...), db: AsyncSession = Depends(get_db)):
+@auth_router.get("/confirm-email/{token}", response_model=schemas.Success, status_code=200)
+async def confirm_user_email(
+    token: str = Path(...), db: AsyncSession = Depends(get_db)
+):
     try:
         user_id = JWTRepo.decode_token(token, "confirm")
         result = await db.execute(select(User).filter_by(id=user_id))
@@ -77,6 +86,63 @@ async def confirm_user(token: str = Path(...), db: AsyncSession = Depends(get_db
         user.is_confirmed = True
         await db.commit()
         await db.refresh(user)
-        return "Success"
+        return {"message": "Success"}
     except Exception as exc:
         raise HTTPException(400, "User confirmation failed") from exc
+
+
+@auth_router.post(
+    "/refresh-token/", response_model=schemas.RefreshTokenResponse, status_code=200
+)
+async def refresh_token(
+    data: schemas.RefreshTokenInput = Body(), db: AsyncSession = Depends(get_db)
+):
+    try:
+        logger.debug("User token refresh started")
+        user_id = JWTRepo.decode_token(data.refresh_token, "refresh")
+        result = await db.execute(select(User).filter_by(id=user_id))
+        auth_user = result.scalar_one_or_none()
+        if auth_user is None:
+            raise HTTPException(401, "Invalid user")
+        access_token = JWTRepo.create_token(auth_user.id, "access")
+        logger.debug("User token refresh completed")
+        return {"token_type": "Bearer", "access_token": access_token}
+    except Exception as exc:
+        raise HTTPException(400, "An error occurred during token refresh") from exc
+
+
+@auth_router.get(
+    "/password-forgot-email/", response_model=schemas.Success, status_code=200
+)
+async def password_forgot_email(
+    bg_task: BackgroundTasks,
+    email: str = Query(...),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(select(User).filter_by(email=email))
+    user = result.scalar_one_or_none()
+    if user is None or not user.is_active:
+        raise HTTPException(403, "Invalid user")
+    bg_task.add_task(send_forgot_password_email, user)
+    return {"message": "Email to reset password sent"}
+
+
+@auth_router.post(
+    "/password-reset/", response_model=schemas.UserResponse, status_code=200
+)
+async def password_reset(
+    data: schemas.PasswordResetInput = Body(), db: AsyncSession = Depends(get_db)
+):
+    try:
+        user_id = JWTRepo.decode_token(data.reset_token, "reset")
+        result = await db.execute(select(User).filter_by(id=user_id))
+        user_obj = result.scalar_one_or_none()
+        if user_obj is None or not user_obj.is_active:
+            raise HTTPException(403, "Invalid user")
+        user_obj.hash(data.password)
+        await db.commit()
+        await db.refresh(user_obj)
+        return {"user": user_obj, "message": "Password reset done"}
+    except Exception as exc:
+        await db.rollback()
+        raise HTTPException(400, "Password reset failed") from exc

@@ -25,3 +25,26 @@ class LoginResponse(BaseModel):
     access_token: str
     refresh_token: str
     model_config = ConfigDict(from_attributes=True)
+
+
+class Success(BaseModel):
+    message: str
+    model_config = ConfigDict(from_attributes=True)
+
+
+class RefreshTokenInput(BaseModel):
+    refresh_token: str
+
+
+class RefreshTokenResponse(BaseModel):
+    token_type: str
+    access_token: str
+
+
+class PasswordResetInput(BaseModel):
+    password: str
+    reset_token: str
+
+
+class PasswordResetOutput(Success):
+    user: UserResponse
