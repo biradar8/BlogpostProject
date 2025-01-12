@@ -6,6 +6,15 @@ from ..config import Base
 
 
 class User(Base):
+    """
+    Model to store site `users` data.
+    - Passwords are stored after they are hashed.
+    - is_confirmed field is used to confirm users, those who signup.
+    - contain relationship to:
+      - posts = relationship("Post", back_populates="author")
+      - drafts = relationship("Draft", back_populates="author")
+    """
+
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, index=True)

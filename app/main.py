@@ -11,12 +11,12 @@ from .config import lifespan
 from .diary import draft_router
 from .posts import post_router
 
-logger = logging.getLogger("blogpost")
+logger = logging.getLogger()
 
 app = FastAPI(
     lifespan=lifespan,
-    title="FastAPI-based API's to manage blog posts",
-    terms_of_service="https://github.com/biradar8/BlogpostProject.git",
+    title="FastAPI-based API's to manage Blogs",
+    terms_of_service="https://github.com/biradar8/BlogpostProject",
 )
 
 logger.info("Application startup completed")

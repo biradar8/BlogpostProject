@@ -15,7 +15,7 @@ class GlobalConfig(BaseSettings):
     WEBSITE_DOMAIN: Optional[str] = None
     WEBSITE_NAME: Optional[str] = None
     USER_CONFIRM_ENDPOINT: Optional[str] = None
-    model_config = SettingsConfigDict(env_file="blogpost/.env", extra="ignore")
+    model_config = SettingsConfigDict(env_file="app/.env", extra="ignore")
 
 
 global_config = GlobalConfig()

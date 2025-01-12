@@ -4,8 +4,15 @@ from sqlalchemy.orm import relationship
 from ..config import Base
 
 
-class Post(Base):
-    __tablename__ = "posts"
+class Draft(Base):
+    """
+    Model to store `Draft blogs`.
+    - Only owner of draft blogs can access them.
+    - contain relationship to:
+      - author = relationship("User", back_populates="drafts")
+    """
+
+    __tablename__ = "drafts"
 
     id = Column(Integer, primary_key=True)
     title = Column(String(250))
@@ -13,4 +20,4 @@ class Post(Base):
     user_id = Column(Integer, ForeignKey("users.id"))
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), server_onupdate=func.now())
-    author = relationship("User", back_populates="posts")
+    author = relationship("User", back_populates="drafts")
