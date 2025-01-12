@@ -29,27 +29,27 @@ def configure_logging():
                     "class": "logging.FileHandler",
                     "level": "DEBUG",
                     "formatter": "file_formatter",
-                    "filename": "blogpost/api.log",
+                    "filename": "app/api.log",
                 },
             },
             "loggers": {
                 "uvicorn": {"handlers": ["console", "file_handler"], "level": "INFO"},
-                "blogpost": {
+                "app": {
                     "handlers": ["console", "file_handler"],
                     "level": "INFO",
                     "propagate": False,
                 },
-                "blogpost.auth.router": {
+                "app.auth.router": {
                     "handlers": ["console", "file_handler"],
                     "level": ("DEBUG" if global_config.ENV_STATE == "dev" else "INFO"),
                     "propagate": False,
                 },
-                "blogpost.auth.utils": {
+                "app.auth.utils": {
                     "handlers": ["console", "file_handler"],
                     "level": ("DEBUG" if global_config.ENV_STATE == "dev" else "INFO"),
                     "propagate": False,
                 },
-                "blogpost.posts.router": {
+                "app.posts.router": {
                     "handlers": ["console", "file_handler"],
                     "level": ("DEBUG" if global_config.ENV_STATE == "dev" else "INFO"),
                     "propagate": False,

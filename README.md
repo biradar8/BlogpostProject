@@ -39,6 +39,7 @@
    ```bash
    python -m venv venv
    ```
+
    ```bash
    venv\Scripts\activate
    ```
@@ -48,6 +49,7 @@
    ```bash
    python3 -m venv venv
    ```
+
    ```bash
    source venv/bin/activate
    ```
@@ -55,21 +57,22 @@
 3. **Install the dependencies**:
 
    ```bash
-   pip install -r blogpost\requirements.txt
+   pip install -r app\requirements.txt
    ```
 
    ```bash
-   pip install -r blogpost/requirements.txt
+   pipx install -r app/requirements.txt
    ```
 
 4. **Set up the database**:
+
    - Ensure that you have the necessary database set up (SQLite, PostgreSQL, etc.)
-   - Adjust the database URL in the `blogpost/.env` file to define the database connection.
+   - Adjust the database URL in the `app/.env` file to define the database connection.
 
 5. **Run the application**:
 
    ```bash
-   uvicorn blogpost.main:app --reload
+   uvicorn app.main:app --reload
    ```
 
    This will run the FastAPI application with hot-reloading enabled.
@@ -79,7 +82,7 @@
 ```
 BlogpostProject/
 │
-├── blogpost/
+├── app/
 │   │
 │   ├── auth/
 │   │   ├── __init__.py
@@ -93,6 +96,12 @@ BlogpostProject/
 │   │   ├── db.py            # Database configuration
 │   │   ├── log.py           # Logging configuration for project
 │   │   └── settings.py      # Settings configuration for storing and accessing sensitive information with .env file
+│   │
+│   ├── drafts/
+│   │   ├── __init__.py
+│   │   ├── models.py        # Database models
+│   │   ├── router.py        # FastAPI endpoints for handling draft Blog related API requests
+│   │   └── schemas.py       # Pydantic schemas for request/response validation
 │   │
 │   ├── posts/
 │   │   ├── __init__.py
@@ -113,206 +122,440 @@ BlogpostProject/
 
 ## API Endpoints
 
-### 1. **User Registration**
+### **User Registration**
 
-#### POST `/api/auth/register/`
+#### POST `/api/user/register/`
 
 - **Description**: Registers a new user. Passwords will be hashed before storing them.
-- **Request Body**: 
-    ```json
-    {
-        "full_name": "string",
-        "email": "user@example.com",
-        "username": "string",
-        "password": "string"
-    }
-    ```
+- **Request Body**:
+
+  ```json
+  {
+    "full_name": "string",
+    "email": "user@example.com",
+    "username": "string",
+    "password": "string"
+  }
+  ```
 
 - **Response**:
-    ```json
-    {
-        "id": 0,
-        "full_name": "string",
-        "email": "user@example.com",
-        "username": "string",
-        "is_active": true,
-        "created_at": "2025-01-04T12:38:52.423Z"
-    }
-    ```
+  ```json
+  {
+    "id": 0,
+    "full_name": "string",
+    "email": "user@example.com",
+    "username": "string",
+    "is_active": true,
+    "created_at": "2025-01-04T12:38:52.423Z"
+  }
+  ```
 
 ---
 
-### 2. **User Confirmation**
+### **User Confirmation**
 
-#### POST `/api/auth/confirm/{token}`
+#### GET `/api/user/confirm/{token}`
 
 - **Description**:Confirm the email. By clicking on the link you get in email.
 
 - **Response**:
-    ```
-    Success
-    ```
+  ```
+  Success
+  ```
+
 ---
 
-### 3. **User Login**
+### **User Login**
 
-#### POST `/api/auth/login/`
+#### POST `/api/user/login/`
 
-- **Description**: Authenticates the user and returns a JWT token.
+- **Description**: Authenticates the user and returns pair of JWT tokens.
 - **Request Body**:
-    ```json
-    {
-        "username": "string",
-        "password": "string"
-    }
-    ```
+
+  ```json
+  {
+    "username": "string",
+    "password": "string"
+  }
+  ```
 
 - **Response**:
-    ```json
-    {
-        "token_type": "Bearer",
-        "access_token": "jwt_token",
-        "refresh_token": "jwt_token"
-    }
-    ```
+  ```json
+  {
+    "token_type": "Bearer",
+    "access_token": "jwt_token",
+    "refresh_token": "jwt_token"
+  }
+  ```
 
 ---
 
-### 4. **Create Blog Post**
+### **User Token Refresh**
+
+#### POST `/api/user/refresh-token/`
+
+- **Description**: refresh token for user and returns a access token.
+- **Request Body**:
+
+  ```json
+  {
+    "refresh_token": "string"
+  }
+  ```
+
+- **Response**:
+  ```json
+  {
+    "token_type": "Bearer",
+    "access_token": "<jwt_token>"
+  }
+  ```
+
+---
+
+### **User Password forgot email**
+
+#### GET `/api/user/password-forgot-email/`
+
+- **Description**: endpoint to let user request for password forgot email.
+
+- **Response**:
+  ```json
+  {
+    "message": "Email to reset password sent"
+  }
+  ```
+
+---
+
+### **User Password reset**
+
+#### GET `/api/user/password-reset/`
+
+- **Description**: endpoint to let user request for password forgot email.
+- **Request Body**:
+
+  ```json
+  {
+    "password": "<string>",
+    "reset_token": "string"
+  }
+  ```
+
+- **Response**:
+  ```json
+  {
+    "user": {
+      "id": 0,
+      "full_name": "string",
+      "email": "user@example.com",
+      "username": "string",
+      "is_active": true,
+      "created_at": "2025-01-04T12:38:52.423Z"
+    },
+    "message": "Password reset done"
+  }
+  ```
+
+---
+
+### **Create Blog Post**
 
 #### POST `/api/blog/`
 
 - **Description**: Create a new blog post (authentication required).
 - **Request Body**:
-    ```json
-    {
-        "title": "Blog Post Title",
-        "body": "This is the content of the blog post"
-    }
-    ```
 
-- **Headers**: 
-    - `Authorization: Bearer {JWT_TOKEN}`
+  ```json
+  {
+    "title": "Blog Post Title",
+    "body": "This is the content of the blog post"
+  }
+  ```
+
+- **Headers**:
+
+  - `Authorization: Bearer {JWT_TOKEN}`
 
 - **Response**:
-    ```json
-    {
-        "id": 0,
-        "title": "string",
-        "body": "string",
-        "author": {
-            "full_name": "string"
-        },
-        "created_at": "2025-01-04T12:44:50.504Z"
-    }
-    ```
+  ```json
+  {
+    "id": 0,
+    "title": "string",
+    "body": "string",
+    "created_at": "2025-01-04T12:44:50.504Z"
+  }
+  ```
 
 ---
 
-### 5. **List All Blog Posts**
+### **List All Blog Posts**
 
 #### GET `/api/blog/`
 
 - **Description**: Get a list of all blog posts.
 - **Response**:
-    ```json
-    [
-        {
-            "id": 1,
-            "title": "Blog Post Title",
-            "body": "This is the content of the blog post",
-            "created_at": "2025-01-01T12:00:00"
-        },
-        {
-            "id": 2,
-            "title": "Another Blog Post",
-            "body": "This is another blog post content",
-            "created_at": "2025-01-02T14:00:00"
-        }
-    ]
-    ```
-
----
-
-### 6. **Get a Single Blog Post**
-
-#### GET `/api/blog/{blog_id}/`
-
-- **Description**: Get details of a single blog post by ID.
-- **Response**:
-    ```json
+  ```json
+  [
     {
-        "id": 1,
-        "title": "Blog Post Title",
-        "body": "This is the content of the blog post",
-        "author_id": {
-            "full_name": "string"
-        },
-        "created_at": "2025-01-01T12:00:00"
+      "title": "Blog Post Title",
+      "body": "This is the content of the blog post",
+      "slug": "blog-post-title",
+      "created_at": "2025-01-01T12:00:00"
+    },
+    {
+      "title": "Another Blog Post",
+      "body": "This is another blog post content",
+      "slug": "another-blog-post",
+      "created_at": "2025-01-02T14:00:00"
     }
-    ```
+  ]
+  ```
 
 ---
 
-### 7. **Update Blog Post**
+### **List All Blog Posts for Author**
+
+#### GET `/api/blog/posts/`
+
+- **Description**: Get a list of all blog posts posted by author.
+
+- **Headers**:
+
+  - `Authorization: Bearer {JWT_TOKEN}`
+
+- **Response**:
+  ```json
+  [
+    {
+      "id": 1,
+      "title": "Blog Post Title",
+      "body": "This is the content of the blog post",
+      "slug": "blog-post-title",
+      "created_at": "2025-01-01T12:00:00"
+    },
+    {
+      "id": 2,
+      "title": "Another Blog Post",
+      "body": "This is another blog post content",
+      "slug": "another-blog-post",
+      "created_at": "2025-01-02T14:00:00"
+    }
+  ]
+  ```
+
+---
+
+### **Get a Single Blog Post**
+
+#### GET `/api/blog/{blog_slug}/`
+
+- **Description**: Get details of a single blog post by slug.
+- **Response**:
+  ```json
+  {
+    "title": "Blog Post Title",
+    "body": "This is the content of the blog post",
+    "author_id": {
+      "full_name": "string"
+    },
+    "created_at": "2025-01-01T12:00:00"
+  }
+  ```
+
+---
+
+### **Update Blog Post**
 
 #### PATCH `/api/blog/{blog_id}/`
 
 - **Description**: Update an existing blog post (authentication required, and the post must be owned by the user).
 
 - **Request Body**:
-    ```json
-    {
-        "title": "Updated Title",
-        "body": "Updated content of the blog post"
-    }
-    ```
 
-- **Headers**: 
-    - `Authorization: Bearer {JWT_TOKEN}`
+  ```json
+  {
+    "title": "Updated Title",
+    "body": "Updated content of the blog post"
+  }
+  ```
+
+- **Headers**:
+
+  - `Authorization: Bearer {JWT_TOKEN}`
 
 - **Response**:
-    ```json
-    {
-        "id": 1,
-        "title": "Blog Post Title",
-        "body": "This is the content of the blog post",
-        "author_id": {
-            "full_name": "string"
-        },
-        "created_at": "2025-01-01T12:00:00",
-        "updated_at": "2025-01-04T12:53:46.448Z"
-    }
-    ```
+  ```json
+  {
+    "id": 1,
+    "title": "Blog Post Title",
+    "body": "This is the content of the blog post",
+    "slug": "another-blog-post",
+    "created_at": "2025-01-01T12:00:00"
+  }
+  ```
+
 ---
 
-### 8. **Delete Blog Post**
+### **Delete Blog Post**
 
 #### DELETE `/api/blog/{blog_id}/`
 
 - **Description**: Delete a blog post (authentication required, and the post must be owned by the user).
 
-- **Headers**: 
-    - `Authorization: Bearer {JWT_TOKEN}`
+- **Headers**:
+
+  - `Authorization: Bearer {JWT_TOKEN}`
 
 - **Response**:
 
-    - `204 No Content`
+  - `204 No Content`
+
+---
+
+### **Create Draft Blog**
+
+#### POST `/api/draft/`
+
+- **Description**: Create a new draft blog (authentication required).
+- **Request Body**:
+
+  ```json
+  {
+    "title": "Draft Blog Title",
+    "body": "This is the content of the draft blog"
+  }
+  ```
+
+- **Headers**:
+
+  - `Authorization: Bearer {JWT_TOKEN}`
+
+- **Response**:
+  ```json
+  {
+    "id": 0,
+    "title": "Draft Blog Title",
+    "body": "This is the content of the draft blog",
+    "created_at": "2025-01-04T12:44:50.504Z"
+  }
+  ```
+
+---
+
+### **List All Draft Blogs**
+
+#### GET `/api/draft/`
+
+- **Description**: Get list of all draft blogs owned by the user(authentication required).
+
+- **Headers**:
+
+  - `Authorization: Bearer {JWT_TOKEN}`
+
+- **Response**:
+  ```json
+  [
+    {
+      "id": 1,
+      "title": "Draft Blog Title",
+      "body": "This is the content of the draft blog",
+      "created_at": "2025-01-01T12:00:00"
+    },
+    {
+      "id": 2,
+      "title": "Another Draft Blog",
+      "body": "This is another draft blog content",
+      "created_at": "2025-01-02T14:00:00"
+    }
+  ]
+  ```
+
+---
+
+### **Get a Single Draft Blog**
+
+#### GET `/api/draft/{draft_id}`
+
+- **Description**: Get details of a single draft blog by id(authentication required, and user must be draft blog owner).
+
+- **Headers**:
+
+  - `Authorization: Bearer {JWT_TOKEN}`
+
+- **Response**:
+  ```json
+  {
+    "title": "Blog Post Title",
+    "body": "This is the content of the blog post",
+    "author_id": {
+      "full_name": "string"
+    },
+    "created_at": "2025-01-01T12:00:00"
+  }
+  ```
+
+---
+
+### **Update draft Blog**
+
+#### PATCH `/api/draft/{draft_id}`
+
+- **Description**: Update an existing draft blog by id(authentication required, and user must be draft blog owner).
+
+- **Request Body**:
+
+  ```json
+  {
+    "title": "Updated Title",
+    "body": "Updated content of the blog post"
+  }
+  ```
+
+- **Headers**:
+
+  - `Authorization: Bearer {JWT_TOKEN}`
+
+- **Response**:
+  ```json
+  {
+    "id": 1,
+    "title": "Blog Post Title",
+    "body": "This is the content of the blog post",
+    "created_at": "2025-01-01T12:00:00"
+  }
+  ```
+
+---
+
+### **Delete Draft Blog Post**
+
+#### DELETE `/api/draft/{draft_id}/`
+
+- **Description**: Delete a draft post (authentication required, and the post must be owned by the user).
+
+- **Headers**:
+
+  - `Authorization: Bearer {JWT_TOKEN}`
+
+- **Response**:
+
+  - `204 No Content`
+
 ---
 
 ### Authentication & JWT Token
 
 - To authenticate, send the JWT token in the `Authorization` header as a Bearer token.
 - Example:
-    ```
-    Authorization: Bearer <your_jwt_token>
-    ```
+  ```
+  Authorization: Bearer <your_jwt_token>
+  ```
 
 ### JWT Token Generation
 
 - **POST /auth/login/** generates a JWT token when the user successfully logs in.
 - The token should be included in the Authorization header for protected routes.
-
 
 ## License
 
